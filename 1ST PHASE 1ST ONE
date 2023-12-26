@@ -1,0 +1,40 @@
+import requests
+import pandas as pd
+
+# Set the number of records to retrieve
+num_records = 100
+
+# Set the base URL for the API
+base_url = "https://jsonplaceholder.typicode.com/posts"
+
+# Make a GET request to the API
+response = requests.get(base_url)
+
+# Check if the request was successful
+if response.status_code == 200:
+    # Store the JSON data in a variable
+    data = response.json()
+else:
+    print("Failed to fetch data from the API")
+
+
+# Create a Pandas DataFrame from the JSON data
+df = pd.DataFrame(data)
+
+# Select the desired columns
+selected_cols = ['id', 'title', 'body']
+df = df[selected_cols]
+
+# Handle missing values by replacing them with zeros
+df.fillna(0, inplace=True)
+
+# Remove outliers
+df = df[~((df['id'] < 0) | (df['id'] > num_records))]
+
+# Clean the text data
+df['title'] = df['title'].apply(lambda x: x.replace("&amp;", "&").replace("<", "").replace(">", ""))
+df['body'] = df['body'].apply(lambda x: x.replace("&amp;", "&").replace("<", "").replace(">", ""))
+
+
+# Save the cleaned dataset as a CSV file
+df.to_csv('cleaned_data.csv', index=False)

@@ -1,0 +1,44 @@
+import pandas as pd
+import numpy as np
+
+# Read the CSV file
+url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTSS-TcErkXNk8KB0AlijhitwetxeHD2M3R0HJl2QPMAyFq0fxFX4PFKnzA/pub?output=csv"
+df = pd.read_csv(url)
+
+
+# For simplicity, we'll replace missing values with zeros.
+df.fillna(0, inplace=True)
+
+# Function to calculate the Interquartile Range (IQR)
+def iqr(series):
+    Q1 = series.quantile(0.25)
+    Q3 = series.quantile(0.75)
+    return Q3 - Q1
+
+# Define the numerical columns
+numerical_cols = df.select_dtypes(include=['int64', 'float64']).columns
+
+# Identify outliers for each numerical column
+for col in numerical_cols:
+    Q1 = df[col].quantile(0.25)
+    Q3 = df[col].quantile(0.75)
+    IQR = Q3 - Q1
+    cut_off = IQR * 1.5
+    lower, upper = Q1 - cut_off, Q3 + cut_off
+    df = df[~((df[col] < lower) | (df[col] > upper))]
+
+
+# Function to clean text data
+def clean_text(text):
+    # Remove special characters and digits
+    text = ''.join(e for e in text if e.isalpha() or e.isspace())
+    # Convert text to lowercase
+    text = text.lower()
+    # Remove stop words
+    text = ' '.join(word for word in text.split() if word not in stopwords.words('english'))
+    return text
+
+# Clean the text data
+text_cols = df.select_dtypes(include=['object']).columns
+for col in text_cols:
+    df[col] = df[col].apply(clean_text)
